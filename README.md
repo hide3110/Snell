@@ -6,7 +6,7 @@
 
 这个 Bash 脚本可以帮助你快速部署 Snell 代理服务器。
 ## 一键脚本自定义
-自定义端口参数如：SNELL_PORT=65432，密钥如：SNELL_PSK=TlfRkj6fSQhAGSM5ib79，
+自定义端口参数如：SNELL_PORT=65432，密钥如：SNELL_PSK=TlfRkj6fSQhAGSM5ib79，使用时请自行定义此参数！
 ```bash
 SNELL_PORT=65432 SNELL_PSK=TlfRkj6fSQhAGSM5ib79 wget -q https://raw.githubusercontent.com/hide3110/Snell/main/Snell.sh -O Snell.sh && chmod +x Snell.sh && . Snell.sh
 ```
