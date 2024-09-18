@@ -5,17 +5,17 @@
 # Snell 
 
 这个 Bash 脚本可以帮助你快速部署 Snell 代理服务器。
-## 一键脚本
+## 一键脚本自定义
 自定义端口参数如：SNELL_PORT=65432，密钥如：SNELL_PSK=TlfRkj6fSQhAGSM5ib79，
 ```bash
-SNELL_PORT=65432 SNELL_PSK=TlfRkj6fSQhAGSM5ib79 wget -q https://raw.githubusercontent.com/passeway/Snell/main/Snell.sh -O Snell.sh && chmod +x Snell.sh && ./Snell.sh
+SNELL_PORT=65432 SNELL_PSK=TlfRkj6fSQhAGSM5ib79 wget -q https://raw.githubusercontent.com/hide3110/Snell/main/Snell.sh -O Snell.sh && chmod +x Snell.sh && ./Snell.sh
 ```
-
+## 一键脚本参数随机
 ```bash
-wget -q https://raw.githubusercontent.com/passeway/Snell/main/Snell.sh -O Snell.sh && chmod +x Snell.sh && ./Snell.sh
+wget -q https://raw.githubusercontent.com/hide3110/Snell/main/Snell.sh -O Snell.sh && chmod +x Snell.sh && ./Snell.sh
 ```
 ```
-curl -sS -o Snell.sh https://raw.githubusercontent.com/passeway/Snell/main/Snell.sh && chmod +x Snell.sh && ./Snell.sh
+curl -sS -o Snell.sh https://raw.githubusercontent.com/hide3110/Snell/main/Snell.sh && chmod +x Snell.sh && ./Snell.sh
 ```
 
 
