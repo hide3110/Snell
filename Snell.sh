@@ -79,8 +79,8 @@ install_snell() {
     chmod +x ${INSTALL_DIR}/snell-server
 
     # 生成随机端口和密码
-    RANDOM_PORT=$(shuf -i 30000-65000 -n 1)
-    RANDOM_PSK=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 20)
+    [ -z "$SNELL_PORT" ] && SNELL_PORT=$(shuf -i 3000-65000 -n 1)
+    [ -z "$SNELL_PSK" ] && SNELL_PSK=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 20)
 
     # 创建配置文件目录
     mkdir -p ${CONF_DIR}
@@ -89,8 +89,8 @@ install_snell() {
     cat > ${CONF_FILE} << EOF
 [snell-server]
 dns = 1.1.1.1, 8.8.8.8, 2001:4860:4860::8888
-listen = ::0:${RANDOM_PORT}
-psk = ${RANDOM_PSK}
+listen = ::0:${SNELL_PORT}
+psk = ${SNELL_PSK}
 ipv6 = true
 EOF
 
@@ -143,7 +143,7 @@ EOF
     IP_COUNTRY=$(curl -s http://ipinfo.io/${HOST_IP}/country)
 
     echo -e "${GREEN}Snell 安装成功${RESET}"
-    echo "${IP_COUNTRY} = snell, ${HOST_IP}, ${RANDOM_PORT}, psk = ${RANDOM_PSK}, version = 4, reuse = true, tfo = true"
+    echo "${IP_COUNTRY} = snell, ${HOST_IP}, ${SNELL_PORT}, psk = ${SNELL_PSK}, version = 4, reuse = true, tfo = true"
 }
 
 # 卸载 Snell
