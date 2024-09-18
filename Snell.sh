@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# 生成随机端口和密码
+[ -z "$SNELL_PORT" ] && SNELL_PORT=$(shuf -i 3000-65000 -n 1)
+[ -z "$SNELL_PSK" ] && SNELL_PSK=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 20)
+
 # 定义颜色代码
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -77,10 +81,6 @@ install_snell() {
 
     # 赋予执行权限
     chmod +x ${INSTALL_DIR}/snell-server
-
-    # 生成随机端口和密码
-    [ -z "$SNELL_PORT" ] && SNELL_PORT=$(shuf -i 3000-65000 -n 1)
-    [ -z "$SNELL_PSK" ] && SNELL_PSK=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 20)
 
     # 创建配置文件目录
     mkdir -p ${CONF_DIR}
