@@ -10,6 +10,9 @@
 ```bash
 SNELL_PORT=65432 SNELL_PSK=TlfRkj6fSQhAGSM5ib79 bash <(curl -Ls https://raw.githubusercontent.com/hide3110/Snell/main/Snell.sh)
 ```
+```
+export SNELL_PORT=65432 SNELL_PSK=TlfRkj6fSQhAGSM5ib79 && wget -q https://raw.githubusercontent.com/hide3110/Snell/main/Snell.sh -O Snell.sh && chmod +x Snell.sh && ./Snell.sh
+```
 ## 一键脚本参数随机
 ```bash
 wget -q https://raw.githubusercontent.com/hide3110/Snell/main/Snell.sh -O Snell.sh && chmod +x Snell.sh && ./Snell.sh
