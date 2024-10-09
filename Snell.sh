@@ -102,8 +102,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=nobody
-Group=nogroup
+User=snell
+Group=snell
 LimitNOFILE=32768
 ExecStart=${INSTALL_DIR}/snell-server -c ${CONF_FILE}
 AmbientCapabilities=CAP_NET_BIND_SERVICE
