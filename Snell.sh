@@ -147,7 +147,6 @@ install_snell() {
     # 创建配置文件
     cat > ${CONF_FILE} << EOF
 [snell-server]
-dns = 8.8.8.8, 1.1.1.1, 2001:4860:4860::8888
 listen = ::0:${SNELL_PORT}
 psk = ${SNELL_PSK}
 ipv6 = true
@@ -161,8 +160,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=root
-Group=root
+User=snell
+Group=snell
 LimitNOFILE=32768
 ExecStart=${INSTALL_DIR}/snell-server -c ${CONF_FILE}
 AmbientCapabilities=CAP_NET_BIND_SERVICE
