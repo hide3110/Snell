@@ -147,7 +147,7 @@ install_snell() {
     # 创建配置文件
     cat > ${CONF_FILE} << EOF
 [snell-server]
-dns = 8.8.8.8, 1.1.1.1, 2001:4860:4860::8888
+dns = 1.1.1.1, 8.8.8.8, 2001:4860:4860::8888
 listen = ::0:${SNELL_PORT}
 psk = ${SNELL_PSK}
 ipv6 = true
