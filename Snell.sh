@@ -15,12 +15,43 @@ LOG_FILE="/var/log/snell_manager.log"
 # 服务名称
 SERVICE_NAME="snell.service"
 
-# 等待其他 apt 进程完成
-wait_for_apt() {
-    while fuser /var/lib/dpkg/lock >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do
-        echo -e "${YELLOW}等待其他 apt 进程完成${RESET}"
-        sleep 1
-    done
+# 检测系统类型
+get_system_type() {
+    if [ -f /etc/debian_version ]; then
+        echo "debian"
+    elif [ -f /etc/redhat-release ]; then
+        echo "centos"
+    else
+        echo "unknown"
+    fi
+}
+
+# 等待包管理器锁
+wait_for_package_manager() {
+    local system_type=$(get_system_type)
+    if [ "$system_type" = "debian" ]; then
+        while fuser /var/lib/dpkg/lock >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do
+            echo -e "${YELLOW}等待其他 apt 进程完成${RESET}"
+            sleep 1
+        done
+    fi
+}
+
+# 安装必要的软件包
+install_required_packages() {
+    local system_type=$(get_system_type)
+    echo -e "${GREEN}安装必要的软件包${RESET}"
+    
+    if [ "$system_type" = "debian" ]; then
+        apt update
+        apt install -y wget unzip curl
+    elif [ "$system_type" = "centos" ]; then
+        yum -y update
+        yum -y install wget unzip curl
+    else
+        echo -e "${RED}不支持的系统类型${RESET}"
+        exit 1
+    fi
 }
 
 # 检查是否以 root 权限运行
@@ -48,7 +79,6 @@ check_snell_running() {
 
 # 启动 Snell 服务
 start_snell() {
-    echo -e "${CYAN}正在启动 Snell${RESET}"
     systemctl start "$SERVICE_NAME"
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}Snell 启动成功${RESET}"
@@ -61,7 +91,6 @@ start_snell() {
 
 # 停止 Snell 服务
 stop_snell() {
-    echo -e "${CYAN}正在停止 Snell${RESET}"
     systemctl stop "$SERVICE_NAME"
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}Snell 停止成功${RESET}"
@@ -74,20 +103,13 @@ stop_snell() {
 
 # 安装 Snell
 install_snell() {
-    echo -e "${CYAN}正在安装 Snell${RESET}"
+    echo -e "${GREEN}正在安装 Snell${RESET}"
 
-    # 等待其他 apt 进程完成
-    wait_for_apt
-
-    # 更新软件包列表
-    if ! apt update; then
-        echo -e "${RED}更新软件包列表失败，请检查您的网络连接或软件源配置。${RESET}"
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - 更新软件包列表失败" >> "$LOG_FILE"
-        exit 1
-    fi
+    # 等待包管理器
+    wait_for_package_manager
 
     # 安装必要的软件包
-    if ! apt install -y wget unzip curl; then
+    if ! install_required_packages; then
         echo -e "${RED}安装必要软件包失败，请检查您的网络连接。${RESET}"
         echo "$(date '+%Y-%m-%d %H:%M:%S') - 安装必要软件包失败" >> "$LOG_FILE"
         exit 1
@@ -137,9 +159,7 @@ install_snell() {
     # 检查 snell 用户是否已存在
     if ! id "snell" &>/dev/null; then
         # 创建 Snell 用户
-        sudo useradd -r -s /usr/sbin/nologin snell
-    else
-        echo -e ""
+        useradd -r -s /usr/sbin/nologin snell
     fi
 
     # 创建配置文件目录
@@ -198,6 +218,10 @@ EOF
         exit 1
     fi
 
+    # 查看 Snell 日志
+    echo -e "${GREEN}Snell 安装成功${RESET}"
+    sleep 3 && journalctl -u snell.service -n 5 --no-pager
+
     # 获取本机IP地址
     HOST_IP=$(curl -s http://checkip.amazonaws.com)
 
@@ -206,14 +230,85 @@ EOF
 
     echo -e "${GREEN}Snell 示例配置${RESET}"
     cat << EOF > /etc/snell/config.txt
-${IP_COUNTRY} = snell, ${HOST_IP}, ${RANDOM_PORT}, psk = ${RANDOM_PSK}, version = 4, reuse = true
+${IP_COUNTRY} = snell, ${HOST_IP}, ${SNELL_PORT}, psk = ${SNELL_PSK}, version = 4, reuse = true
 EOF
+    cat /etc/snell/config.txt
+}
+
+# 更新 Snell
+update_snell() {
+    # 检查 Snell 是否已安装
+    INSTALL_DIR="/usr/local/bin"
+    SNELL_BIN="${INSTALL_DIR}/snell-server"
+    if [ ! -f "${SNELL_BIN}" ]; then
+        echo -e "${YELLOW}Snell 未安装，跳过更新${RESET}"
+        return
+    fi
+
+    echo -e "${GREEN}Snell 正在更新${RESET}"
+
+    # 停止 Snell
+    if ! systemctl stop snell; then
+        echo -e "${RED}停止 Snell 失败。${RESET}"
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - 停止 Snell 失败" >> "$LOG_FILE"
+        exit 1
+    fi
+
+    # 等待包管理器
+    wait_for_package_manager
+
+    # 安装必要的软件包
+    if ! install_required_packages; then
+        echo -e "${RED}安装必要软件包失败，请检查您的网络连接。${RESET}"
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - 安装必要软件包失败" >> "$LOG_FILE"
+        exit 1
+    fi
+
+    # 下载 Snell 服务器文件
+    ARCH=$(arch)
+    VERSION="v4.1.1"
+    SNELL_URL=""
+
+    if [[ ${ARCH} == "aarch64" ]]; then
+        SNELL_URL="https://dl.nssurge.com/snell/snell-server-${VERSION}-linux-aarch64.zip"
+    else
+        SNELL_URL="https://dl.nssurge.com/snell/snell-server-${VERSION}-linux-amd64.zip"
+    fi
+
+    # 下载 Snell 服务器文件
+    if ! wget ${SNELL_URL} -O snell-server.zip; then
+        echo -e "${RED}下载 Snell 失败。${RESET}"
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - 下载 Snell 失败" >> "$LOG_FILE"
+        exit 1
+    fi
+
+    # 解压缩文件到指定目录
+    if ! unzip -o snell-server.zip -d ${INSTALL_DIR}; then
+        echo -e "${RED}解压缩 Snell 失败。${RESET}"
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - 解压缩 Snell 失败" >> "$LOG_FILE"
+        exit 1
+    fi
+
+    # 删除下载的 zip 文件
+    rm snell-server.zip
+
+    # 赋予执行权限
+    chmod +x ${SNELL_BIN}
+
+    # 重启 Snell
+    if ! systemctl restart snell; then
+        echo -e "${RED}重启 Snell 失败。${RESET}"
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - 重启 Snell 失败" >> "$LOG_FILE"
+        exit 1
+    fi
+
+    echo -e "${GREEN}Snell 更新成功${RESET}"
     cat /etc/snell/config.txt
 }
 
 # 卸载 Snell
 uninstall_snell() {
-    echo -e "${CYAN}正在卸载 Snell${RESET}"
+    echo -e "${GREEN}正在卸载 Snell${RESET}"
 
     # 停止 Snell 服务
     systemctl stop snell
@@ -283,7 +378,8 @@ show_menu() {
             echo "3. 启动 Snell 服务"
         fi
     fi
-    echo "4. 查看 Snell 配置"
+    echo "4. 更新 Snell 服务"
+    echo "5. 查看 Snell 配置"
     echo "0. 退出"
     echo -e "${GREEN}======================${RESET}"
     read -p "请输入选项编号: " choice
@@ -324,10 +420,13 @@ main() {
                 fi
                 ;;
             4)
-                if [[ -n "${IP_COUNTRY}" && -n "${HOST_IP}" && -n "${SNELL_PORT}" && -n "${SNELL_PSK}" ]]; then
-                    echo "${IP_COUNTRY} = snell, ${HOST_IP}, ${SNELL_PORT}, psk = ${SNELL_PSK}, version = 4, reuse = true"
+                update_snell
+                ;;
+            5)
+                if [ -f /etc/snell/config.txt ]; then
+                    cat /etc/snell/config.txt
                 else
-                    echo -e "${RED}Snell 未安装或配置信息不可用${RESET}"
+                    echo -e "${RED}配置文件不存在${RESET}"
                 fi
                 ;;
             0)
