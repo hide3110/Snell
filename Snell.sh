@@ -95,6 +95,7 @@ install_snell() {
 
     # 下载 Snell 服务器文件
     ARCH=$(arch)
+    VERSION="v4.1.1"
     SNELL_URL=""
     INSTALL_DIR="/usr/local/bin"
     SYSTEMD_SERVICE_FILE="/lib/systemd/system/snell.service"
@@ -102,9 +103,9 @@ install_snell() {
     CONF_FILE="${CONF_DIR}/snell-server.conf"
 
     if [[ ${ARCH} == "aarch64" ]]; then
-        SNELL_URL="https://dl.nssurge.com/snell/snell-server-v4.1.1-linux-aarch64.zip"
+        SNELL_URL="https://dl.nssurge.com/snell/snell-server-${VERSION}-linux-aarch64.zip"
     else
-        SNELL_URL="https://dl.nssurge.com/snell/snell-server-v4.1.1-linux-amd64.zip"
+        SNELL_URL="https://dl.nssurge.com/snell/snell-server-${VERSION}-linux-amd64.zip"
     fi
 
     # 下载 Snell 服务器文件
@@ -203,9 +204,11 @@ EOF
     # 获取IP所在国家
     IP_COUNTRY=$(curl -s http://ipinfo.io/${HOST_IP}/country)
 
-    echo -e "${GREEN}Snell 安装成功${RESET}"
-    echo "${IP_COUNTRY} = snell, ${HOST_IP}, ${SNELL_PORT}, psk = ${SNELL_PSK}, version = 4, reuse = true"
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - Snell 安装成功: ${IP_COUNTRY}, ${HOST_IP}, ${SNELL_PORT}, psk=${SNELL_PSK}" >> "$LOG_FILE"
+    echo -e "${GREEN}Snell 示例配置${RESET}"
+    cat << EOF > /etc/snell/config.txt
+${IP_COUNTRY} = snell, ${HOST_IP}, ${RANDOM_PORT}, psk = ${RANDOM_PSK}, version = 4, reuse = true
+EOF
+    cat /etc/snell/config.txt
 }
 
 # 卸载 Snell
