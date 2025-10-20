@@ -117,7 +117,7 @@ install_snell() {
 
     # 下载 Snell 服务器文件
     ARCH=$(arch)
-    VERSION="v4.1.1"
+    VERSION="v5.0.0"
     SNELL_URL=""
     INSTALL_DIR="/usr/local/bin"
     SYSTEMD_SERVICE_FILE="/lib/systemd/system/snell.service"
@@ -183,9 +183,11 @@ After=network.target
 Type=simple
 User=snell
 Group=snell
-LimitNOFILE=32768
 ExecStart=${INSTALL_DIR}/snell-server -c ${CONF_FILE}
-AmbientCapabilities=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_NET_ADMIN CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_NET_ADMIN CAP_NET_RAW
+LimitNOFILE=32768
+Restart=on-failure
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=snell-server
@@ -230,7 +232,7 @@ EOF
 
     echo -e "${GREEN}Snell 示例配置${RESET}"
     cat << EOF > /etc/snell/config.txt
-${IP_COUNTRY} = snell, ${HOST_IP}, ${SNELL_PORT}, psk = ${SNELL_PSK}, version = 4, reuse = true
+${IP_COUNTRY} = snell, ${HOST_IP}, ${SNELL_PORT}, psk = ${SNELL_PSK}, version = 5, reuse = true
 EOF
     cat /etc/snell/config.txt
 }
@@ -266,7 +268,7 @@ update_snell() {
 
     # 下载 Snell 服务器文件
     ARCH=$(arch)
-    VERSION="v4.1.1"
+    VERSION="v5.0.0"
     SNELL_URL=""
 
     if [[ ${ARCH} == "aarch64" ]]; then
