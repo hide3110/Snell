@@ -153,7 +153,7 @@ install_snell() {
     chmod +x ${INSTALL_DIR}/snell-server
 
     # 生成随机端口和密码
-    [ -z "$SNELL_PORT" ] && SNELL_PORT=$(shuf -i 3000-65000 -n 1)
+    [ -z "$SNELL_PORT" ] && SNELL_PORT=$(shuf -i 30000-65000 -n 1)
     [ -z "$SNELL_PSK" ] && SNELL_PSK=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 20)
 
     # 检查 snell 用户是否已存在
@@ -222,7 +222,7 @@ EOF
 
     # 查看 Snell 日志
     echo -e "${GREEN}Snell 安装成功${RESET}"
-    sleep 3 && journalctl -u snell.service -n 5 --no-pager
+    sleep 3 && journalctl -u snell.service -n 8 --no-pager
 
     # 获取本机IP地址
     HOST_IP=$(curl -s http://checkip.amazonaws.com)
@@ -230,7 +230,7 @@ EOF
     # 获取IP所在国家
     IP_COUNTRY=$(curl -s http://ipinfo.io/${HOST_IP}/country)
 
-    echo -e "${GREEN}Snell 示例配置${RESET}"
+    echo -e "${GREEN}Snell 示例配置，非TF版本请改为version = 4，项目地址: https://github.com/passeway/Snell${RESET}"
     cat << EOF > /etc/snell/config.txt
 ${IP_COUNTRY} = snell, ${HOST_IP}, ${SNELL_PORT}, psk = ${SNELL_PSK}, version = 5, reuse = true
 EOF
@@ -304,7 +304,7 @@ update_snell() {
         exit 1
     fi
 
-    echo -e "${GREEN}Snell 更新成功${RESET}"
+    echo -e "${GREEN}Snell 更新成功，非TF版本请改为version = 4${RESET}"
     cat /etc/snell/config.txt
 }
 
@@ -357,6 +357,17 @@ show_menu() {
 
     if [ $snell_installed -eq 0 ]; then
         installation_status="${GREEN}已安装${RESET}"
+        if version_output=$(/usr/local/bin/snell-server -version 2>&1); then
+            snell_version=$(echo "$version_output" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
+            if [ -n "$snell_version" ]; then
+                version_status="${GREEN}${snell_version}${RESET}"
+            else
+                version_status="${RED}未知版本${RESET}"
+            fi
+        else
+            version_status="${RED}未知版本${RESET}"
+        fi
+
         if [ $snell_running -eq 0 ]; then
             running_status="${GREEN}已启动${RESET}"
         else
@@ -365,11 +376,13 @@ show_menu() {
     else
         installation_status="${RED}未安装${RESET}"
         running_status="${RED}未启动${RESET}"
+        version_status="—"
     fi
 
     echo -e "${GREEN}=== Snell 管理工具 ===${RESET}"
     echo -e "安装状态: ${installation_status}"
     echo -e "运行状态: ${running_status}"
+    echo -e "运行版本: ${version_status}"
     echo ""
     echo "1. 安装 Snell 服务"
     echo "2. 卸载 Snell 服务"
